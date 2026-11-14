@@ -1,3 +1,3 @@
-export default function DeployementsPage() {
-  return <h1>CloudForge Deployements</h1>
+export default function DeploymentsPage() {
+  return <h1>CloudForge Deployments</h1>
 }
