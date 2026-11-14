@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router'
 
-import ThemeToggle from '@/components/theme/ThemeToggle'
+import AppShell from '@/components/layout/AppShell'
 import DashboardPage from '@/pages/DashboardPage'
 import ProjectsPage from '@/pages/ProjectsPage'
 import DeploymentsPage from '@/pages/DeploymentsPage'
@@ -9,11 +9,7 @@ import NotFoundPage from '@/pages/NotFoundPage'
 
 function App() {
   return (
-    <div className="min-h-screen p-6">
-      <div className="mb-6 flex justify-end">
-        <ThemeToggle />
-      </div>
-
+    <AppShell>
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />
@@ -22,7 +18,7 @@ function App() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-    </div>
+    </AppShell>
   )
 }
 
