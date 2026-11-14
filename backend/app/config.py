@@ -10,6 +10,8 @@ class BaseConfig:
     SECRET_KEY = os.getenv("SECRET_KEY", "development-only-change-me")
     DEBUG = False
     TESTING = False
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
 class DevelopmentConfig(BaseConfig):
@@ -25,6 +27,7 @@ class ProductionConfig(BaseConfig):
 class TestingConfig(BaseConfig):
     TESTING = True
     SECRET_KEY = "test-secret-key"
+    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
 
 
 config_by_name = {
