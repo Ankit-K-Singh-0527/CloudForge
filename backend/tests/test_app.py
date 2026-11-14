@@ -2,7 +2,7 @@
 import pytest
 
 from app import create_app
-from app.config import ProductionConfig
+from app.config import DevelopmentConfig, ProductionConfig
 
 
 @pytest.fixture
@@ -15,7 +15,13 @@ def client(app):
     return app.test_client()
 
 
-def test_development_configuration():
+def test_development_configuration(monkeypatch):
+    monkeypatch.setattr(
+        DevelopmentConfig,
+        "SQLALCHEMY_DATABASE_URI",
+        "postgresql://test:test@localhost/test_db",
+    )
+
     app = create_app("development")
 
     assert app.config["DEBUG"] is True
@@ -46,4 +52,15 @@ def test_health_endpoint(client):
     data = response.get_json()
 
     assert data["status"] == "healthy"
+    assert data["service"] == "CloudForge API"
+
+def test_database_readiness_endpoint(client):
+    response = client.get("/api/v1/health/ready")
+
+    assert response.status_code == 200
+
+    data = response.get_json()
+
+    assert data["status"] == "ready"
+    assert data["database"] == "connected"
     assert data["service"] == "CloudForge API"
