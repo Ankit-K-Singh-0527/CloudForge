@@ -43,6 +43,16 @@ CloudForge is designed around three primary interfaces:
 
 All interfaces will communicate with a shared Flask backend and deployment orchestration system.
 
+## Architecture & Technical Documentation
+
+CloudForge maintains dedicated technical documentation for its architecture and implementation decisions.
+
+| Documentation | Description |
+|---|---|
+| [Database Schema & Architecture](docs/database/database-schema.md) | Database entities, ER diagram, relationships, constraints, indexes, authorization and data integrity decisions. |
+
+For database architecture and schema discussions, refer to the [Database Schema & Architecture](docs/database/database-schema.md) document.
+
 ### Planned deployment workflow
 
 1. Connect a GitHub repository or provide a local project through the supported workflow.
