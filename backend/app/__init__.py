@@ -3,7 +3,7 @@ from flask import Flask
 from app.config import config_by_name
 from app.extensions import db, migrate
 from app.routes import register_routes
-
+import app.models
 
 def create_app(config_name="development"):
     app = Flask(__name__)
