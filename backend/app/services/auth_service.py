@@ -17,6 +17,8 @@ from app.services.password_service import (
     hash_password,
     verify_password
 )
+from app.services.session_service import revoke_session
+
 
 class RegistrationError(Exception):
     """Base exception for registration failures."""
@@ -40,6 +42,10 @@ class LoginError(Exception):
 
 class LoginServiceError(Exception):
     """Raised when the login operation cannot be completed."""
+
+
+class LogoutServiceError(Exception):
+    """Raised when the logout operation cannot be completed."""
 
 
 def _normalize_name(full_name: str) -> str:
@@ -244,4 +250,21 @@ def authenticate_user(email: str, password: str) -> User:
         db.session.rollback()
         raise LoginServiceError(
             "Login could not be completed."
+        ) from exc
+
+
+def logout_user(session_token: str) -> bool:
+    """
+    Log out the current session by revoking its server-side record.
+
+    Returns True when the session is successfully revoked.
+    Returns False when the token is invalid or already revoked.
+    Raises LogoutServiceError when session revocation fails.
+    """
+    try:
+        return revoke_session(session_token)
+
+    except RuntimeError as exc:
+        raise LogoutServiceError(
+            "Logout could not be completed."
         ) from exc
