@@ -16,6 +16,7 @@ from app.services.auth_service import (
     LoginError,
     RegistrationConflict,
     authenticate_user,
+    logout_user,
     register_user,
 )
 from app.services.password_service import verify_password
@@ -261,3 +262,69 @@ def test_login_rejects_account_without_password_credential(app):
             )
 
         assert str(exc_info.value) == "Invalid email or password."
+
+
+def test_logout_revokes_current_session(app):
+    from app.services.session_service import (
+        create_session,
+        validate_session,
+    )
+
+    with app.app_context():
+        user = register_user(
+            "Ankit Kumar",
+            "ankit@example.com",
+            "CloudForge-Secure-2026",
+        )
+
+        created = create_session(user)
+
+        result = logout_user(created.session_token)
+
+        assert result is True
+        assert validate_session(created.session_token) is None
+
+
+def test_logout_rejects_unknown_session(app):
+    with app.app_context():
+        result = logout_user("unknown-session-token")
+
+        assert result is False
+
+
+def test_logout_is_idempotent(app):
+    from app.services.session_service import create_session
+
+    with app.app_context():
+        user = register_user(
+            "Ankit Kumar",
+            "ankit@example.com",
+            "CloudForge-Secure-2026",
+        )
+
+        created = create_session(user)
+
+        assert logout_user(created.session_token) is True
+        assert logout_user(created.session_token) is False
+
+
+def test_logout_does_not_revoke_other_sessions(app):
+    from app.services.session_service import (
+        create_session,
+        validate_session,
+    )
+
+    with app.app_context():
+        user = register_user(
+            "Ankit Kumar",
+            "ankit@example.com",
+            "CloudForge-Secure-2026",
+        )
+
+        first_session = create_session(user)
+        second_session = create_session(user)
+
+        assert logout_user(first_session.session_token) is True
+
+        assert validate_session(first_session.session_token) is None
+        assert validate_session(second_session.session_token) is not None
