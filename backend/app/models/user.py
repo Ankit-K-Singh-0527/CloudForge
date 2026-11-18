@@ -62,7 +62,7 @@ class User(db.Model):
         back_populates="user",
     )
 
-        # Authentication relationships
+    # Authentication relationships
     credential: Mapped["UserCredential | None"] = relationship(
         "UserCredential",
         back_populates="user",
@@ -75,8 +75,8 @@ class User(db.Model):
     )
 
     sessions: Mapped[list["UserSession"]] = relationship(
-    "UserSession",
-    back_populates="user",
+        "UserSession",
+        back_populates="user",
     )
 
     # Project and audit relationships

@@ -1,4 +1,3 @@
-
 import re
 import secrets
 import unicodedata
@@ -14,8 +13,10 @@ from app.models import (
     Workspace,
     WorkspaceMembership,
 )
-from app.services.password_service import hash_password
-
+from app.services.password_service import (
+    hash_password,
+    verify_password
+)
 
 class RegistrationError(Exception):
     """Base exception for registration failures."""
@@ -31,6 +32,14 @@ class RegistrationConflict(RegistrationError):
 
 class RegistrationServiceError(RegistrationError):
     """Raised when registration cannot be completed."""
+
+
+class LoginError(Exception):
+    """Raised when login credentials are invalid."""
+
+
+class LoginServiceError(Exception):
+    """Raised when the login operation cannot be completed."""
 
 
 def _normalize_name(full_name: str) -> str:
@@ -183,4 +192,56 @@ def register_user(
         db.session.rollback()
         raise RegistrationServiceError(
             "Registration could not be completed."
+        ) from exc
+
+
+def authenticate_user(email: str, password: str) -> User:
+    """
+    Authenticate a user using email and password credentials.
+
+    Returns the authenticated User on success.
+    Raises LoginError for invalid credentials.
+    Raises LoginServiceError for database failures.
+    """
+    if not isinstance(email, str) or not isinstance(password, str):
+        raise LoginError("Invalid email or password.")
+
+    normalized_email = email.strip().lower()
+
+    if not normalized_email:
+        raise LoginError("Invalid email or password.")
+
+    try:
+        result = db.session.execute(
+            select(User, UserCredential)
+            .join(
+                UserCredential,
+                UserCredential.user_id == User.id,
+            )
+            .where(User.email == normalized_email)
+        ).first()
+
+        if result is None:
+            raise LoginError("Invalid email or password.")
+
+        user, credential = result
+
+        if not user.is_active:
+            raise LoginError("Invalid email or password.")
+
+        if not verify_password(
+            credential.password_hash,
+            password,
+        ):
+            raise LoginError("Invalid email or password.")
+
+        return user
+
+    except LoginError:
+        raise
+
+    except SQLAlchemyError as exc:
+        db.session.rollback()
+        raise LoginServiceError(
+            "Login could not be completed."
         ) from exc
