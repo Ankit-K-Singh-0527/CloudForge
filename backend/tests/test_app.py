@@ -5,15 +5,6 @@ from app import create_app
 from app.config import DevelopmentConfig, ProductionConfig
 
 
-@pytest.fixture
-def app():
-    return create_app("testing")
-
-
-@pytest.fixture
-def client(app):
-    return app.test_client()
-
 
 def test_development_configuration(monkeypatch):
     monkeypatch.setattr(
