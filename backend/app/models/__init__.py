@@ -5,6 +5,7 @@ from app.models.user_credential import UserCredential
 from app.models.user_identity import UserIdentity
 from app.models.workspace import Workspace
 from app.models.workspace_membership import WorkspaceMembership
+from app.models.user_session import UserSession
 
 __all__ = [
     "User",
@@ -14,4 +15,5 @@ __all__ = [
     "WorkspaceMembership",
     "Project",
     "AuditEvent",
+    "UserSession"
 ]

@@ -74,6 +74,11 @@ class User(db.Model):
         back_populates="user",
     )
 
+    sessions: Mapped[list["UserSession"]] = relationship(
+    "UserSession",
+    back_populates="user",
+    )
+
     # Project and audit relationships
     created_projects: Mapped[list["Project"]] = relationship(
         "Project",
