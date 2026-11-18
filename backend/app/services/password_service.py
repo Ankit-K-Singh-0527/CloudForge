@@ -1,4 +1,3 @@
-
 from argon2 import PasswordHasher
 from argon2.exceptions import (
     HashingError,
@@ -30,15 +29,4 @@ def verify_password(password_hash: str, password: str) -> bool:
     try:
         return password_hasher.verify(password_hash, password)
     except (VerifyMismatchError, VerificationError, InvalidHashError):
-        return False
-
-
-def password_needs_rehash(password_hash: str) -> bool:
-    """Check whether a stored hash should be upgraded."""
-    if not isinstance(password_hash, str) or not password_hash:
-        return False
-
-    try:
-        return password_hasher.check_needs_rehash(password_hash)
-    except (VerificationError, InvalidHashError):
         return False

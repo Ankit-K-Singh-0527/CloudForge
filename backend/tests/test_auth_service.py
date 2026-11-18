@@ -13,7 +13,9 @@ from app.models import (
 )
 from app.services.auth_service import (
     InvalidRegistrationData,
+    LoginError,
     RegistrationConflict,
+    authenticate_user,
     register_user,
 )
 from app.services.password_service import verify_password
@@ -175,3 +177,87 @@ def test_registration_does_not_store_plaintext_password(app):
             credential.password_hash,
             "Wrong-Password-2026",
         )
+
+
+def test_login_with_valid_credentials(app):
+    with app.app_context():
+        register_user(
+            "Ankit Kumar",
+            "ankit@example.com",
+            "CloudForge-Secure-2026",
+        )
+
+        user = authenticate_user(
+            "ANKIT@example.com",
+            "CloudForge-Secure-2026",
+        )
+
+        assert user.email == "ankit@example.com"
+        assert user.full_name == "Ankit Kumar"
+
+
+def test_login_rejects_unknown_email(app):
+    with app.app_context():
+        with pytest.raises(LoginError) as exc_info:
+            authenticate_user(
+                "unknown@example.com",
+                "CloudForge-Secure-2026",
+            )
+
+        assert str(exc_info.value) == "Invalid email or password."
+
+
+def test_login_rejects_incorrect_password(app):
+    with app.app_context():
+        register_user(
+            "Ankit Kumar",
+            "ankit@example.com",
+            "CloudForge-Secure-2026",
+        )
+
+        with pytest.raises(LoginError) as exc_info:
+            authenticate_user(
+                "ankit@example.com",
+                "Wrong-Password-2026",
+            )
+
+        assert str(exc_info.value) == "Invalid email or password."
+
+
+def test_login_rejects_inactive_user(app):
+    with app.app_context():
+        user = register_user(
+            "Ankit Kumar",
+            "ankit@example.com",
+            "CloudForge-Secure-2026",
+        )
+
+        user.is_active = False
+        db.session.commit()
+
+        with pytest.raises(LoginError) as exc_info:
+            authenticate_user(
+                "ankit@example.com",
+                "CloudForge-Secure-2026",
+            )
+
+        assert str(exc_info.value) == "Invalid email or password."
+
+
+def test_login_rejects_account_without_password_credential(app):
+    with app.app_context():
+        user = User(
+            email="google@example.com",
+            full_name="Google User",
+        )
+
+        db.session.add(user)
+        db.session.commit()
+
+        with pytest.raises(LoginError) as exc_info:
+            authenticate_user(
+                "google@example.com",
+                "CloudForge-Secure-2026",
+            )
+
+        assert str(exc_info.value) == "Invalid email or password."
