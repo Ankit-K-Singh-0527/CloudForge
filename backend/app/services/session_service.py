@@ -151,6 +151,7 @@ def validate_session(session_token: str) -> UserSession | None:
         ) from exc
 
 
+
 def revoke_session(session_token: str) -> bool:
     """
     Revoke the session associated with a raw session token.
@@ -165,9 +166,9 @@ def revoke_session(session_token: str) -> bool:
         token_hash = _hash_token(session_token)
 
         user_session = db.session.scalar(
-            select(UserSession).where(
-                UserSession.token_hash == token_hash
-            )
+            select(UserSession)
+            .where(UserSession.token_hash == token_hash)
+            .with_for_update()
         )
 
         if user_session is None or user_session.revoked_at is not None:
