@@ -1,6 +1,7 @@
 
 import hashlib
 import secrets
+from flask import current_app
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
@@ -44,12 +45,21 @@ def create_session(user: User) -> CreatedSession:
     now = datetime.now(timezone.utc)
 
     session_token = secrets.token_urlsafe(32)
-    csrf_token = secrets.token_urlsafe(32)
+
+    from app.services.csrf_service import (
+        derive_csrf_token,
+        hash_csrf_token,
+    )
+
+    csrf_token = derive_csrf_token(
+        session_token,
+        current_app.config["SECRET_KEY"],
+    )
 
     user_session = UserSession(
         user_id=user.id,
         token_hash=_hash_token(session_token),
-        csrf_token_hash=_hash_token(csrf_token),
+        csrf_token_hash=hash_csrf_token(csrf_token),
         expires_at=now + SESSION_ABSOLUTE_LIFETIME,
         created_at=now,
         last_seen_at=now,
@@ -98,7 +108,7 @@ def validate_session(session_token: str) -> UserSession | None:
             select(UserSession)
             .where(UserSession.token_hash == token_hash)
             .with_for_update()
-        )
+)
 
         if user_session is None:
             return None
@@ -111,17 +121,16 @@ def validate_session(session_token: str) -> UserSession | None:
         expires_at = _as_utc(user_session.expires_at)
         last_seen_at = _as_utc(user_session.last_seen_at)
 
-        if now >= expires_at:
-            user_session.revoked_at = now
-            db.session.commit()
-            return None
+        is_expired = now >= expires_at
+        is_idle_expired = (
+            now - last_seen_at >= SESSION_IDLE_TIMEOUT
+        )
 
-        if now - last_seen_at >= SESSION_IDLE_TIMEOUT:
-            user_session.revoked_at = now
-            db.session.commit()
-            return None
-
-        if not user_session.user.is_active:
+        if (
+            is_expired
+            or is_idle_expired
+            or not user_session.user.is_active
+        ):
             user_session.revoked_at = now
             db.session.commit()
             return None
@@ -133,7 +142,6 @@ def validate_session(session_token: str) -> UserSession | None:
             user_session.last_seen_at = now
             db.session.commit()
 
-        db.session.commit()
         return user_session
 
     except SQLAlchemyError as exc:
@@ -141,7 +149,6 @@ def validate_session(session_token: str) -> UserSession | None:
         raise RuntimeError(
             "Session validation could not be completed."
         ) from exc
-
 
 
 def revoke_session(session_token: str) -> bool:

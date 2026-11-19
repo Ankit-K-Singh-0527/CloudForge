@@ -1,9 +1,12 @@
+
 from flask import Flask
+from flask_cors import CORS
 
 from app.config import config_by_name
 from app.extensions import db, migrate
 from app.routes import register_routes
 import app.models
+
 
 def create_app(config_name="development"):
     app = Flask(__name__)
@@ -26,8 +29,23 @@ def create_app(config_name="development"):
             "DATABASE_URL must be configured before initializing the database."
         )
 
+    # Allow browser requests only from explicitly trusted frontend origins.
+    CORS(
+        app,
+        resources={
+            r"/api/*": {
+                "origins": app.config["FRONTEND_ORIGINS"],
+            }
+        },
+        supports_credentials=True,
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "X-CSRF-Token"],
+        vary_header=True,
+    )
+
     db.init_app(app)
     migrate.init_app(app, db)
+
     register_routes(app)
 
     return app
